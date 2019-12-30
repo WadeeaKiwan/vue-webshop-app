@@ -88,7 +88,7 @@ textarea {
   cursor: pointer;
 }
 
-.activeTab {
+.active-tab {
   color: #16c0b0;
   text-decoration: underline;
 }

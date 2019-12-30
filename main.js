@@ -1,3 +1,5 @@
+const eventBus = new Vue();
+
 Vue.component('Product', {
   props: {
     premium: {
@@ -33,19 +35,7 @@ Vue.component('Product', {
         </button>
       </div>
 
-      <div>
-        <h2>Reviews</h2>
-        <p v-if="!reviews.length">There are no reviews yet.</p>
-        <ul>
-          <li v-for="review in reviews">
-            <p>{{review.name}}</p>
-            <p>Rating: {{review.rating}}</p>
-            <p>{{review.review}}</p>
-          </li>
-        </ul>
-      </div>
-
-      <ProductReview @review-submitted="addReview"></ProductReview>
+      <ProductTabs :reviews="reviews"></ProductTabs>
 
     </div>`,
   data() {
@@ -80,9 +70,6 @@ Vue.component('Product', {
       this.selectedVariant = index;
       console.log(index);
     },
-    addReview(productReview) {
-      this.reviews.push(productReview);
-    },
   },
   computed: {
     title() {
@@ -100,6 +87,18 @@ Vue.component('Product', {
       }
       return `€2.99`;
     },
+  },
+  mounted() {
+    eventBus.$on('review-submitted', productReview => {
+      this.reviews.push(productReview);
+    });
+    // If we don't use the ES6 arrow function, then we have to manually bind the component's (this) to the function
+    // eventBus.$on(
+    //   'review-submitted',
+    //   function(productReview) {
+    //     this.reviews.push(productReview);
+    //   }.bind(this),
+    // );
   },
 });
 
@@ -156,7 +155,7 @@ Vue.component('ProductReview', {
           review: this.review,
           rating: this.rating,
         };
-        this.$emit('review-submitted', productReview);
+        eventBus.$emit('review-submitted', productReview);
         this.name = null;
         this.review = null;
         this.rating = null;
@@ -166,6 +165,49 @@ Vue.component('ProductReview', {
         if (!this.rating) this.errors.push('Rating required!');
       }
     },
+  },
+});
+
+Vue.component('ProductTabs', {
+  props: {
+    reviews: {
+      type: Array,
+      required: true,
+    },
+  },
+  template: `
+    <div>
+      <span class="tab"
+            :class="{ 'active-tab': selectedTab === tab }"
+            v-for="(tab, index) in tabs" 
+            :key="index"
+            @click="selectedTab = tab">
+        {{ tab }}
+      </span>
+
+      <div v-show="selectedTab === 'Reviews'">
+        <h2>Reviews</h2>
+        <p v-if="!reviews.length">There are no reviews yet.</p>
+        <ul>
+          <li v-for="review in reviews">
+            <p>{{review.name}}</p>
+            <p>Rating: {{review.rating}}</p>
+            <p>{{review.review}}</p>
+          </li>
+        </ul>
+      </div>
+
+      <ProductReview 
+        v-show="selectedTab === 'Make a Review'">
+      </ProductReview>
+
+    </div>
+  `,
+  data() {
+    return {
+      tabs: ['Reviews', 'Make a Review'],
+      selectedTab: 'Reviews',
+    };
   },
 });
 
